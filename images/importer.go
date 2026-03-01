@@ -21,7 +21,7 @@ func importImage(asset assets.Asset, rawData []byte) error {
 		return err
 	}
 
-	id, err := imageStore.Allocate(img)
+	id, err := imageCache.Allocate(img)
 
 	if err != nil {
 		return err
