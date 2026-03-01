@@ -1,34 +1,27 @@
 package images
 
 import (
+	"bytes"
+
 	"github.com/adm87/stellar/engine/assets"
-	"github.com/adm87/stellar/engine/structures/store"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-func deallocateImage(img *ebiten.Image) {
-	img.Deallocate()
-}
+var Cache = assets.NewAssetCache[ebiten.Image](1024,
+	// AssetAllocator function that creates an ebiten.Image from raw byte data
+	func(data []byte) (*ebiten.Image, error) {
+		img, _, err := ebitenutil.NewImageFromReader(bytes.NewReader(data))
 
-var imageCache = assets.NewAssetCache[ebiten.Image](1024)
+		if err != nil {
+			return nil, err
+		}
 
-func GetImageID(path assets.AssetPath) (store.StoreID, bool) {
-	return imageCache.GetID(path)
-}
+		return img, nil
+	},
 
-func GetImage(id store.StoreID) (*ebiten.Image, bool) {
-	return imageCache.GetByID(id)
-}
-
-func AddImage(path assets.AssetPath, img *ebiten.Image) error {
-	_, err := imageCache.Add(path, img)
-	return err
-}
-
-func RemoveImage(path assets.AssetPath) {
-	imageCache.Remove(path, deallocateImage)
-}
-
-func ClearCache() {
-	imageCache.Clear(deallocateImage)
-}
+	// AssetDeallocator function that deallocates an ebiten.Image when it is removed from the cache
+	func(img *ebiten.Image) {
+		img.Deallocate()
+	},
+)

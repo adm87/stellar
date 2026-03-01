@@ -24,7 +24,7 @@ func NewShell(config *data.GameConfig) *Shell {
 		panic("failed to load assets: " + err.Error())
 	}
 
-	testId, exists := images.GetImageID(content.EmbeddedImage10x10)
+	testId, exists := images.Cache.GetID(content.EmbeddedImage10x10)
 
 	if !exists {
 		panic("failed to retrieve test image from cache")

@@ -11,8 +11,8 @@ var registerOnce sync.Once
 // Register registers the image asset importers for supported image types.
 func Register() {
 	registerOnce.Do(func() {
-		assets.RegisterImporter("jpg", importImage)
-		assets.RegisterImporter("jpeg", importImage)
-		assets.RegisterImporter("png", importImage)
+		assets.RegisterImporter("jpg", Cache)
+		assets.RegisterImporter("jpeg", Cache)
+		assets.RegisterImporter("png", Cache)
 	})
 }

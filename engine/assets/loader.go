@@ -26,17 +26,17 @@ func (l *Loader) Load() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	for _, asset := range l.assets {
-		data, err := fs.ReadFile(l.filesystem, string(asset))
+	for _, path := range l.assets {
+		data, err := fs.ReadFile(l.filesystem, string(path))
 
 		if err != nil {
-			return FailedLoad{Asset: asset, Err: err}
+			return FailedLoad{Asset: path, Err: err}
 		}
 
-		assetType := asset.Type()
+		assetType := path.Type()
 
 		if assetType == "" {
-			return MissingType{Asset: asset}
+			return MissingType{Asset: path}
 		}
 
 		importer, exists := GetImporter(assetType)
@@ -45,8 +45,8 @@ func (l *Loader) Load() error {
 			return UnsupportedAssetType{AssetType: assetType}
 		}
 
-		if err := importer(asset, data); err != nil {
-			return FailedImport{Asset: asset, Err: err}
+		if err := importer.Import(path, data); err != nil {
+			return FailedImport{Asset: path, Err: err}
 		}
 	}
 

@@ -28,26 +28,67 @@ func (a AssetPath) Type() AssetType {
 // AssetType represents a type of asset, such as "jpeg", "png", "json", etc. This can be used to determine how to load the asset.
 type AssetType string
 
-// AssetImporter is a function type that defines how to import an asset. It takes an AssetPath and its raw byte data, and returns an error if the import fails.
-//
-// The AssetImporter is responsible for processing the raw data and converting it into a usable form for the game.
-type AssetImporter func(asset AssetPath, rawData []byte) error
+// AssetImporter is an interface that defines how to import an asset.
+// It has a single method, Import, which takes an AssetPath and its raw byte data, and returns an error if the import fails.
+type AssetImporter interface {
+	Import(path AssetPath, rawData []byte) error
+}
+
+// AssetAllocator is a function type that defines how to allocate an asset.
+// It takes the raw byte data of the asset and returns a pointer to the allocated asset and an error if the allocation fails.
+type AssetAllocator[T any] func(rawData []byte) (*T, error)
+
+// AssetDeallocator is a function type that defines how to deallocate an asset.
+// It takes a pointer to the asset that needs to be deallocated.
+type AssetDeallocator[T any] func(*T)
 
 // AssetCache is a generic structure that manages the caching of loaded assets.
 // It uses a store to manage the actual asset data and a registry to map asset paths to their corresponding store IDs.
 type AssetCache[T any] struct {
-	cache  *store.Store[*T]
+	cache     *store.Store[*T]
+	allocFn   AssetAllocator[T]
+	deallocFn AssetDeallocator[T]
+
 	assets map[AssetPath]store.StoreID
 	mu     sync.RWMutex
 }
 
 // NewAssetCache creates a new AssetCache with the specified capacity for the underlying store.
 // The capacity determines how many assets can be stored before the cache needs to evict old assets.
-func NewAssetCache[T any](capacity uint32) *AssetCache[T] {
+func NewAssetCache[T any](capacity uint32, allocFn AssetAllocator[T], deallocFn AssetDeallocator[T]) *AssetCache[T] {
 	return &AssetCache[T]{
-		cache:  store.NewStore[*T](capacity),
-		assets: make(map[AssetPath]store.StoreID),
+		cache:     store.NewStore[*T](capacity),
+		allocFn:   allocFn,
+		deallocFn: deallocFn,
+		assets:    make(map[AssetPath]store.StoreID),
 	}
+}
+
+// Import imports an asset into the cache using the provided AssetPath and raw byte data.
+// It uses the AssetAllocator function to allocate the asset and stores it in the cache.
+func (ac *AssetCache[T]) Import(path AssetPath, rawData []byte) error {
+	ac.mu.Lock()
+	defer ac.mu.Unlock()
+
+	if _, exists := ac.assets[path]; exists {
+		return DuplicateAsset{Asset: path}
+	}
+
+	item, err := ac.allocFn(rawData)
+
+	if err != nil {
+		return err
+	}
+
+	id, err := ac.cache.Allocate(item)
+
+	if err != nil {
+		ac.deallocFn(item)
+		return err
+	}
+
+	ac.assets[path] = id
+	return nil
 }
 
 // GetID retrieves the StoreID of an asset from the cache based on its AssetPath. It returns the StoreID and a boolean
@@ -88,8 +129,9 @@ func (ac *AssetCache[T]) Add(path AssetPath, item *T) (store.StoreID, error) {
 	return id, nil
 }
 
-// Remove removes an asset from the cache based on its AssetPath. If the asset does not exist in the cache, it does nothing.
-func (ac *AssetCache[T]) Remove(path AssetPath, dealloc func(*T)) {
+// Remove removes an asset from the cache based on its AssetPath.
+// Calls the provided deallocation function to free the memory used by the asset before removing it from the cache.
+func (ac *AssetCache[T]) Remove(path AssetPath) {
 	ac.mu.Lock()
 	defer ac.mu.Unlock()
 
@@ -100,15 +142,16 @@ func (ac *AssetCache[T]) Remove(path AssetPath, dealloc func(*T)) {
 	item, exists := ac.cache.Get(ac.assets[path])
 
 	if exists {
-		dealloc(item)
+		ac.deallocFn(item)
 	}
 
 	ac.cache.Deallocate(ac.assets[path])
 	delete(ac.assets, path)
 }
 
-// Clear removes all assets from the cache and deallocates their memory using the provided deallocation function.
-func (ac *AssetCache[T]) Clear(dealloc func(*T)) {
+// Clear clears all assets from the cache.
+// Calls the provided deallocation function for each asset to free their memory before clearing the cache.
+func (ac *AssetCache[T]) Clear() {
 	ac.mu.Lock()
 	defer ac.mu.Unlock()
 
@@ -116,7 +159,7 @@ func (ac *AssetCache[T]) Clear(dealloc func(*T)) {
 		item, exists := ac.cache.Get(id)
 
 		if exists {
-			dealloc(item)
+			ac.deallocFn(item)
 		}
 
 		ac.cache.Deallocate(id)
