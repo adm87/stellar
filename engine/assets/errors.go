@@ -15,7 +15,7 @@ func (e StoreFull) Error() string {
 // ------------------------------------------------------------------------------
 
 type DuplicateAsset struct {
-	Asset Asset
+	Asset AssetPath
 }
 
 func (e DuplicateAsset) Error() string {
@@ -27,7 +27,7 @@ func (e DuplicateAsset) Error() string {
 // ------------------------------------------------------------------------------
 
 type FailedImport struct {
-	Asset Asset
+	Asset AssetPath
 	Err   error
 }
 
@@ -40,7 +40,7 @@ func (e FailedImport) Error() string {
 // ------------------------------------------------------------------------------
 
 type FailedLoad struct {
-	Asset Asset
+	Asset AssetPath
 	Err   error
 }
 
@@ -53,7 +53,7 @@ func (e FailedLoad) Error() string {
 // ------------------------------------------------------------------------------
 
 type MissingType struct {
-	Asset Asset
+	Asset AssetPath
 }
 
 func (e MissingType) Error() string {

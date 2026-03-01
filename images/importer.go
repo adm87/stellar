@@ -7,26 +7,17 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-func importImage(asset assets.Asset, rawData []byte) error {
-	imageStoreMu.Lock()
-	defer imageStoreMu.Unlock()
-
-	if _, exists := imageRegistry[asset]; exists {
-		return assets.DuplicateAsset{Asset: asset}
-	}
-
+func importImage(asset assets.AssetPath, rawData []byte) error {
 	img, _, err := ebitenutil.NewImageFromReader(bytes.NewBuffer(rawData))
 
 	if err != nil {
 		return err
 	}
 
-	id, err := imageCache.Allocate(img)
-
-	if err != nil {
+	if err := AddImage(asset, img); err != nil {
+		deallocateImage(img)
 		return err
 	}
 
-	imageRegistry[asset] = id
 	return nil
 }

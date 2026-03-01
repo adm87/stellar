@@ -6,7 +6,7 @@ import (
 )
 
 func RenderImage(screen *ebiten.Image, id store.StoreID, opt *ebiten.DrawImageOptions) {
-	img, ok := imageCache.Get(id)
+	img, ok := imageCache.GetByID(id)
 
 	if !ok {
 		return

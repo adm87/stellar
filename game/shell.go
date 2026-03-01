@@ -14,7 +14,7 @@ type Shell struct {
 	config *data.GameConfig
 	time   *Time
 
-	testId store.StoreID
+	testAsset store.StoreID
 }
 
 func NewShell(config *data.GameConfig) *Shell {
@@ -24,16 +24,16 @@ func NewShell(config *data.GameConfig) *Shell {
 		panic("failed to load assets: " + err.Error())
 	}
 
-	testId, exists := images.GetStoreID(content.EmbeddedImage10x10)
+	testId, exists := images.GetImageID(content.EmbeddedImage10x10)
 
 	if !exists {
 		panic("failed to retrieve test image from cache")
 	}
 
 	return &Shell{
-		config: config,
-		time:   NewTime(config.FPS),
-		testId: testId,
+		config:    config,
+		time:      NewTime(config.FPS),
+		testAsset: testId,
 	}
 }
 
@@ -44,7 +44,7 @@ func (s *Shell) Update() error {
 
 func (s *Shell) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrint(screen, "Hello")
-	images.RenderImage(screen, s.testId, nil)
+	images.RenderImage(screen, s.testAsset, nil)
 }
 
 func (s *Shell) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

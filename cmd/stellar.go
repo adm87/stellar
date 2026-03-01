@@ -6,7 +6,6 @@ import (
 
 	"github.com/adm87/stellar/data"
 	"github.com/adm87/stellar/game"
-	"github.com/adm87/stellar/images"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -16,8 +15,6 @@ func Stellar(version string) error {
 	if err := parseArgs(&a); err != nil {
 		return err
 	}
-
-	images.Register()
 
 	return ebiten.RunGame(game.NewShell(&data.GameConfig{
 		Name:         "Stellar",

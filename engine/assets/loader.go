@@ -9,12 +9,12 @@ import (
 // It ensures thread safety for the loader, not individual assets.
 type Loader struct {
 	filesystem fs.FS
-	assets     []Asset
+	assets     []AssetPath
 	mu         sync.Mutex
 }
 
 // NewLoader creates a new Loader with the given filesystem and assets to load.
-func NewLoader(filesystem fs.FS, assets ...Asset) *Loader {
+func NewLoader(filesystem fs.FS, assets ...AssetPath) *Loader {
 	return &Loader{
 		filesystem: filesystem,
 		assets:     assets,

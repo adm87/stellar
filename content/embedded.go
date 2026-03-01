@@ -10,5 +10,5 @@ import (
 var EmbeddedFS embed.FS
 
 const (
-	EmbeddedImage10x10 assets.Asset = "embedded/images/image_10x10.png"
+	EmbeddedImage10x10 assets.AssetPath = "embedded/images/image_10x10.png"
 )
