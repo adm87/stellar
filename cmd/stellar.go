@@ -2,45 +2,60 @@ package cmd
 
 import (
 	"flag"
+	"fmt"
 	"path/filepath"
 
-	"github.com/adm87/stellar/data"
+	"github.com/adm87/stellar/errs"
 	"github.com/adm87/stellar/game"
-	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/adm87/stellar/logging"
 )
 
 func Stellar(version string) error {
-	a := data.GameArgs{}
+	args, err := parseArgs()
 
-	if err := parseArgs(&a); err != nil {
-		return err
+	if err != nil {
+		return &errs.Fatal{
+			Message: fmt.Sprintf("Failed to parse arguments: %v", err),
+		}
 	}
 
-	return ebiten.RunGame(game.NewShell(&data.GameConfig{
-		Name:         "Stellar",
-		Version:      version,
-		RootDir:      a.RootDir,
-		FPS:          60,
-		WindowWidth:  800,
-		WindowHeight: 600,
-		RenderScale:  1.0,
-		Fullscreen:   a.Fullscreen,
-	}))
+	cfg := game.NewConfig(version, args)
+
+	if err := game.NewShell(cfg).Run(); err != nil {
+		return &errs.Fatal{
+			Message: fmt.Sprintf("Failed to run game shell: %v", err),
+		}
+	}
+
+	return nil
 }
 
-func parseArgs(args *data.GameArgs) error {
+func parseArgs() (game.Args, error) {
+	args := game.Args{}
+
 	flag.StringVar(&args.RootDir, "root", ".", "Root directory for game assets")
+	flag.StringVar(&args.LogLevel, "log-level", "error", "Logging level (debug, info, warn, error)")
 	flag.BoolVar(&args.Fullscreen, "fullscreen", false, "Start the game in fullscreen mode")
 	flag.Parse()
-	return validateArgs(args)
+
+	return args, validateArgs(&args)
 }
 
-func validateArgs(args *data.GameArgs) error {
-	absRootDir, err := filepath.Abs(args.RootDir)
+func validateArgs(args *game.Args) error {
+	absRootPath, err := filepath.Abs(args.RootDir)
 	if err != nil {
-		return err
+		return &errs.InvalidArg{
+			Message: fmt.Sprintf("Invalid root directory: %v", err),
+		}
 	}
-	args.RootDir = absRootDir
+	args.RootDir = absRootPath
+
+	lvl := logging.LogLevel(args.LogLevel)
+	if !lvl.IsValid() {
+		return &errs.InvalidArg{
+			Message: fmt.Sprintf("Invalid log level: %s", args.LogLevel),
+		}
+	}
 
 	return nil
 }

@@ -3,59 +3,51 @@ package game
 import "time"
 
 const (
-	MaxAccumulator = time.Second / 4
-	MaxDeltaTime   = time.Millisecond * 50
+	MaxDeltaTime       = time.Second / 4
+	MaxAccumulatedTime = time.Second * 2
 )
 
 type Time struct {
-	last        time.Time
 	delta       time.Duration
-	accumulator time.Duration
 	fixedDelta  time.Duration
+	accumulator time.Duration
+	lastUpdate  time.Time
 	fixedSteps  int
 }
 
 func NewTime(fps int) *Time {
 	return &Time{
-		fixedDelta:  time.Second / time.Duration(fps),
 		delta:       0,
+		fixedDelta:  time.Second / time.Duration(fps),
 		accumulator: 0,
+		lastUpdate:  time.Now(),
 		fixedSteps:  0,
 	}
 }
 
-func (t *Time) Tick() {
+func (t *Time) start() {
+	t.lastUpdate = time.Now()
+}
+
+func (t *Time) tick() {
 	now := time.Now()
 
-	if t.last.IsZero() {
-		t.last = now
-		return
-	}
-
-	t.delta = now.Sub(t.last)
-	t.last = now
-
-	if t.delta <= 0 {
-		return
-	}
+	t.delta = now.Sub(t.lastUpdate)
+	t.lastUpdate = now
 
 	if t.delta > MaxDeltaTime {
 		t.delta = MaxDeltaTime
 	}
 
-	t.accumulator = min(t.accumulator+t.delta, MaxAccumulator)
+	t.accumulator += t.delta
 	t.fixedSteps = 0
 
-	for t.accumulator >= time.Duration(t.fixedDelta) {
-		t.accumulator -= time.Duration(t.fixedDelta)
+	if t.accumulator > MaxAccumulatedTime {
+		t.accumulator = MaxAccumulatedTime
+	}
+
+	for t.accumulator >= t.fixedDelta {
+		t.accumulator -= t.fixedDelta
 		t.fixedSteps++
 	}
-}
-
-func (t *Time) Delta() float64 {
-	return t.delta.Seconds()
-}
-
-func (t *Time) FixedDelta() float64 {
-	return t.fixedDelta.Seconds()
 }

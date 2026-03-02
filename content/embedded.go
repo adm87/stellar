@@ -3,7 +3,7 @@ package content
 import (
 	"embed"
 
-	"github.com/adm87/stellar/engine/assets"
+	"github.com/adm87/stellar/assets"
 )
 
 //go:embed embedded
