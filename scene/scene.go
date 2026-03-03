@@ -19,7 +19,7 @@ type SceneID string
 
 const InvalidSceneID SceneID = ""
 
-// Scene represents a distinct state or screen in the game, such as a main menu, gameplay, or pause screen.
+// Scene represents a distinct state or screen in the game, such as a splashscreen, main menu, or gameplay.
 // Each scene is responsible for its own logic and rendering, and can define transitions to other scenes based on specific conditions.
 // The Director manages the active scene and handles transitions between scenes.
 type Scene interface {

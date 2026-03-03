@@ -23,3 +23,7 @@ func NewScreenBuffer(width, height int, color color.RGBA) *ScreenBuffer {
 func (sb *ScreenBuffer) Clear() {
 	sb.img.Fill(sb.color)
 }
+
+func (sb *ScreenBuffer) Image() *ebiten.Image {
+	return sb.img
+}
