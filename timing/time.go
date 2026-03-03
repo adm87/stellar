@@ -51,3 +51,23 @@ func (t *Time) Tick() {
 		t.fixedSteps++
 	}
 }
+
+func (t *Time) Delta() float64 {
+	return t.delta.Seconds()
+}
+
+func (t *Time) Delta32() float32 {
+	return float32(t.delta.Seconds())
+}
+
+func (t *Time) FixedSteps() int {
+	return t.fixedSteps
+}
+
+func (t *Time) FixedDelta() float64 {
+	return t.fixedDelta.Seconds()
+}
+
+func (t *Time) FixedDelta32() float32 {
+	return float32(t.fixedDelta.Seconds())
+}

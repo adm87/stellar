@@ -13,6 +13,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+// registerScenes registers all the scenes in the game with the provided Director, allowing them to be transitioned to during gameplay.
+// It returns an error if there is an issue registering any of the scenes.
 func registerScenes(d *scene.Director) error {
 	if err := d.RegisterScene(splashscreen.SplashScreenScene, splashscreen.NewScene); err != nil {
 		return err
@@ -23,6 +25,8 @@ func registerScenes(d *scene.Director) error {
 	return nil
 }
 
+// addSceneTransitions defines the valid transitions between scenes in the game, allowing the Director to manage scene changes based on specific conditions.
+// It returns an error if there is an issue adding any of the scene transitions.
 func addSceneTransitions(d *scene.Director) error {
 	if err := d.AddTransition(splashscreen.SplashScreenScene, splashscreen.SplashScreenComplete, gameplay.GameplayScene); err != nil {
 		return err
@@ -53,6 +57,7 @@ func NewShell(config *Config) *Shell {
 			config.WindowWidth,
 			config.WindowHeight,
 			config.BackgroundColor,
+			config.ResizeMode,
 		),
 		director: scene.NewDirector(),
 		logger:   logging.NewLogger(),
@@ -145,7 +150,7 @@ func (s *Shell) Draw(screen *ebiten.Image) {
 		return
 	}
 
-	screen.DrawImage(s.buffer.Image(), &s.config.DrawOptions)
+	s.buffer.ApplyTo(screen)
 }
 
 // Layout calculates the layout of the game window based on the configured window size and render scale,
