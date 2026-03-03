@@ -4,24 +4,44 @@ import (
 	"github.com/adm87/stellar/assets"
 	"github.com/adm87/stellar/errs"
 	"github.com/adm87/stellar/logging"
+	"github.com/adm87/stellar/scene"
+	"github.com/adm87/stellar/timing"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+// --------------------------------------------------------------------------------
+// Game Shell
+// --------------------------------------------------------------------------------
+
+// Shell is the main entry point for running the game. It manages the game loop and provides access to the game context.
 type Shell struct {
-	config *Config
-	assets *assets.Assets
-	logger *logging.Logger
-	time   *Time
+	config   *Config
+	director *scene.Director
+	assets   *assets.Assets
+	logger   *logging.Logger
+	time     *timing.Time
 }
 
 func NewShell(config *Config) *Shell {
 	return &Shell{
-		config: config,
-		assets: assets.NewAssets(),
-		logger: logging.NewLogger().With("version", config.Version),
-		time:   NewTime(config.FPS),
+		config:   config,
+		director: scene.NewDirector(),
+		assets:   assets.NewAssets(),
+		logger:   logging.NewLogger().With("version", config.Version),
+		time:     timing.NewTime(config.FPS),
 	}
+}
+
+func (s *Shell) Assets() *assets.Assets {
+	return s.assets
+}
+
+func (s *Shell) Logger() *logging.Logger {
+	return s.logger
+}
+
+func (s *Shell) Time() *timing.Time {
+	return s.time
 }
 
 func (s *Shell) Run() error {
@@ -49,17 +69,19 @@ func (s *Shell) Run() error {
 	ebiten.SetWindowSize(s.config.WindowWidth, s.config.WindowHeight)
 	ebiten.SetFullscreen(s.config.Fullscreen)
 
-	s.time.start()
+	s.time.Start()
 	return ebiten.RunGame(s)
 }
 
 func (s *Shell) Update() error {
-	s.time.tick()
-	return nil
+	s.time.Tick()
+	return s.director.Update(s)
 }
 
 func (s *Shell) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, "Hello, Stellar!")
+	if err := s.director.Draw(s); err != nil {
+		s.logger.Error("Error drawing scene: " + err.Error())
+	}
 }
 
 func (s *Shell) Layout(outsideWidth, outsideHeight int) (int, int) {

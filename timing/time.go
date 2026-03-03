@@ -1,4 +1,4 @@
-package game
+package timing
 
 import "time"
 
@@ -25,11 +25,11 @@ func NewTime(fps int) *Time {
 	}
 }
 
-func (t *Time) start() {
+func (t *Time) Start() {
 	t.lastUpdate = time.Now()
 }
 
-func (t *Time) tick() {
+func (t *Time) Tick() {
 	now := time.Now()
 
 	t.delta = now.Sub(t.lastUpdate)
