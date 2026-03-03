@@ -20,7 +20,6 @@ const (
 type ScreenBuffer struct {
 	img        *ebiten.Image
 	matrix     ebiten.GeoM
-	filter     ebiten.Filter
 	options    ebiten.DrawImageOptions
 	color      color.RGBA
 	resizeMode BufferResizeMode
@@ -36,6 +35,7 @@ func NewScreenBuffer(width, height int, color color.RGBA, resizeMode BufferResiz
 		img:        img,
 		color:      color,
 		resizeMode: resizeMode,
+		options:    ebiten.DrawImageOptions{},
 		isDirty:    true,
 	}
 }
@@ -53,7 +53,7 @@ func (sb *ScreenBuffer) Image() *ebiten.Image {
 
 // SetFilter sets the filter mode for the screen buffer.
 func (sb *ScreenBuffer) SetFilter(filter ebiten.Filter) {
-	sb.filter = filter
+	sb.options.Filter = filter
 }
 
 // SetResizeMode changes the resize mode of the screen buffer, marking it as dirty to trigger a
@@ -101,10 +101,8 @@ func (sb *ScreenBuffer) ApplyTo(target *ebiten.Image) {
 			sb.resizeMode,
 		)
 		sb.isDirty = false
+		sb.options.GeoM = sb.matrix
 	}
-
-	sb.options.GeoM = sb.matrix
-	sb.options.Filter = sb.filter
 
 	target.DrawImage(sb.img, &sb.options)
 }
