@@ -1,7 +1,11 @@
 package splashscreen
 
 import (
+	"github.com/adm87/stellar/assets"
+	"github.com/adm87/stellar/logging"
+	"github.com/adm87/stellar/rendering"
 	"github.com/adm87/stellar/scene"
+	"github.com/adm87/stellar/timing"
 )
 
 const (
@@ -16,20 +20,20 @@ func NewScene() scene.Scene {
 	return &Scene{}
 }
 
-func (s *Scene) EnterScene(ctx scene.Context) error {
-	ctx.Logger().Info("Entering splash screen scene")
+func (s *Scene) EnterScene(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) error {
+	logger.Info("Entering splash screen scene")
 	return nil
 }
 
-func (s *Scene) ExitScene(ctx scene.Context) error {
-	ctx.Logger().Info("Exiting splash screen scene")
+func (s *Scene) ExitScene(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) error {
+	logger.Info("Exiting splash screen scene")
 	return nil
 }
 
-func (s *Scene) Update(ctx scene.Context) (scene.SceneTransition, error) {
-	return SplashScreenComplete, nil
+func (s *Scene) Update(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) (scene.SceneTransition, error) {
+	return scene.ContinueScene, nil
 }
 
-func (s *Scene) Draw(ctx scene.Context) error {
+func (s *Scene) Draw(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) error {
 	return nil
 }

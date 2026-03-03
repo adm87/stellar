@@ -6,36 +6,50 @@ import (
 	"github.com/adm87/stellar/game/scenes/gameplay"
 	"github.com/adm87/stellar/game/scenes/splashscreen"
 	"github.com/adm87/stellar/logging"
+	"github.com/adm87/stellar/rendering"
 	"github.com/adm87/stellar/scene"
 	"github.com/adm87/stellar/timing"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 // --------------------------------------------------------------------------------
 // Game Shell
 // --------------------------------------------------------------------------------
 
-// Shell is the main entry point for running the game. It manages the game loop and provides access to the game context.
+// Shell is the main entry point for the game, responsible for initializing and running the game loop.
 type Shell struct {
 	config   *Config
-	director *scene.Director
 	assets   *assets.Assets
+	buffer   *rendering.ScreenBuffer
+	director *scene.Director
 	logger   *logging.Logger
 	time     *timing.Time
 }
 
 func NewShell(config *Config) *Shell {
 	return &Shell{
-		config:   config,
+		config: config,
+		assets: assets.NewAssets(),
+		buffer: rendering.NewScreenBuffer(
+			config.WindowWidth,
+			config.WindowHeight,
+			config.BackgroundColor,
+		),
 		director: scene.NewDirector(),
-		assets:   assets.NewAssets(),
 		logger:   logging.NewLogger(),
-		time:     timing.NewTime(config.FPS),
+		time: timing.NewTime(
+			config.FPS,
+		),
 	}
 }
 
 func (s *Shell) Assets() *assets.Assets {
 	return s.assets
+}
+
+func (s *Shell) Buffer() *rendering.ScreenBuffer {
+	return s.buffer
 }
 
 func (s *Shell) Logger() *logging.Logger {
@@ -92,12 +106,16 @@ func (s *Shell) Run() error {
 
 func (s *Shell) Update() error {
 	s.time.Tick()
-	return s.director.Update(s)
+	return s.director.Update(s.assets, s.buffer, s.logger, s.time)
 }
 
 func (s *Shell) Draw(screen *ebiten.Image) {
-	if err := s.director.Draw(s); err != nil {
+	s.buffer.Clear()
+
+	if err := s.director.Draw(s.assets, s.buffer, s.logger, s.time); err != nil {
 		s.logger.Error("Error drawing scene: " + err.Error())
+		ebitenutil.DebugPrint(screen, "Error drawing scene: "+err.Error())
+		return
 	}
 }
 

@@ -6,19 +6,9 @@ import (
 	"github.com/adm87/stellar/assets"
 	"github.com/adm87/stellar/errs"
 	"github.com/adm87/stellar/logging"
+	"github.com/adm87/stellar/rendering"
 	"github.com/adm87/stellar/timing"
 )
-
-// --------------------------------------------------------------------------------
-// Scene Context
-// --------------------------------------------------------------------------------
-
-// Context provides access to shared resources and services that scenes can use during their lifecycle.
-type Context interface {
-	Assets() *assets.Assets
-	Logger() *logging.Logger
-	Time() *timing.Time
-}
 
 // --------------------------------------------------------------------------------
 // Scene Interface
@@ -29,13 +19,14 @@ type SceneID string
 
 const InvalidSceneID SceneID = ""
 
-// Scene represents a single screen or state in the game.
-// It is responsible for updating and drawing itself based on the provided context.
+// Scene represents a distinct state or screen in the game, such as a main menu, gameplay, or pause screen.
+// Each scene is responsible for its own logic and rendering, and can define transitions to other scenes based on specific conditions.
+// The Director manages the active scene and handles transitions between scenes.
 type Scene interface {
-	EnterScene(ctx Context) error
-	ExitScene(ctx Context) error
-	Update(ctx Context) (SceneTransition, error)
-	Draw(ctx Context) error
+	EnterScene(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) error
+	ExitScene(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) error
+	Update(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) (SceneTransition, error)
+	Draw(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) error
 }
 
 // SceneFactory is a function type that creates a new instance of a Scene.
@@ -44,8 +35,8 @@ type SceneFactory func() Scene
 // SceneTransition represents the condition under which a scene should exit, used to determine when to transition to another scene.
 type SceneTransition uint8
 
-// NoSceneTransition indicates that a scene should not transition to another scene and should continue running until explicitly transitioned by the Director.
-const NoSceneTransition SceneTransition = 0
+// ContinueScene indicates that a scene should not transition to another scene and should continue running until explicitly transitioned by the Director.
+const ContinueScene SceneTransition = 0
 
 // --------------------------------------------------------------------------------
 // Director
@@ -147,14 +138,14 @@ func (d *Director) TransitionTo(id SceneID) error {
 
 // Update updates the current scene and handles any necessary transitions based on the scene's update logic.
 // It returns an error if there is an issue updating the current scene or transitioning to a new scene.
-func (d *Director) Update(ctx Context) error {
+func (d *Director) Update(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) error {
 	if d.current == nil && d.nextID == InvalidSceneID {
 		return nil
 	}
 
 	if d.nextID != InvalidSceneID {
 		if d.current != nil {
-			if err := d.current.ExitScene(ctx); err != nil {
+			if err := d.current.ExitScene(assets, buffer, logger, time); err != nil {
 				return errs.InvalidOperation{
 					Message: fmt.Sprintf("failed to exit current scene '%s': %s", d.currentID, err.Error()),
 				}
@@ -178,7 +169,7 @@ func (d *Director) Update(ctx Context) error {
 		d.currentID = d.nextID
 		d.nextID = InvalidSceneID
 
-		if err := d.current.EnterScene(ctx); err != nil {
+		if err := d.current.EnterScene(assets, buffer, logger, time); err != nil {
 			return errs.InvalidOperation{
 				Message: fmt.Sprintf("failed to enter next scene '%s': %s", d.currentID, err.Error()),
 			}
@@ -187,7 +178,7 @@ func (d *Director) Update(ctx Context) error {
 		return nil
 	}
 
-	transition, err := d.current.Update(ctx)
+	transition, err := d.current.Update(assets, buffer, logger, time)
 
 	if err != nil {
 		return errs.InvalidOperation{
@@ -195,7 +186,7 @@ func (d *Director) Update(ctx Context) error {
 		}
 	}
 
-	if transition != NoSceneTransition {
+	if transition != ContinueScene {
 		nextID, exists := d.transitions[d.currentID][transition]
 
 		if !exists {
@@ -212,12 +203,12 @@ func (d *Director) Update(ctx Context) error {
 
 // Draw calls the Draw method of the current scene to render it on the screen.
 // It returns an error if there is an issue drawing the current scene.
-func (d *Director) Draw(ctx Context) error {
+func (d *Director) Draw(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) error {
 	if d.current == nil {
 		return nil
 	}
 
-	if err := d.current.Draw(ctx); err != nil {
+	if err := d.current.Draw(assets, buffer, logger, time); err != nil {
 		return errs.InvalidOperation{
 			Message: fmt.Sprintf("failed to draw current scene '%s': %s", d.currentID, err.Error()),
 		}
