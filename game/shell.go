@@ -3,6 +3,8 @@ package game
 import (
 	"github.com/adm87/stellar/assets"
 	"github.com/adm87/stellar/errs"
+	"github.com/adm87/stellar/game/scenes/gameplay"
+	"github.com/adm87/stellar/game/scenes/splashscreen"
 	"github.com/adm87/stellar/logging"
 	"github.com/adm87/stellar/scene"
 	"github.com/adm87/stellar/timing"
@@ -27,7 +29,7 @@ func NewShell(config *Config) *Shell {
 		config:   config,
 		director: scene.NewDirector(),
 		assets:   assets.NewAssets(),
-		logger:   logging.NewLogger().With("version", config.Version),
+		logger:   logging.NewLogger(),
 		time:     timing.NewTime(config.FPS),
 	}
 }
@@ -49,6 +51,7 @@ func (s *Shell) Run() error {
 	s.logger.Debug("Starting game shell...",
 		"buildMode", s.config.BuildMode,
 		"name", s.config.Name,
+		"version", s.config.Version,
 		"rootDir", s.config.RootDir,
 		"fullscreen", s.config.Fullscreen,
 		"windowWidth", s.config.WindowWidth,
@@ -65,11 +68,25 @@ func (s *Shell) Run() error {
 		}
 	}
 
+	if err := registerScenes(s.director); err != nil {
+		return errs.BootFailure{
+			Message: "Failed to register scenes: " + err.Error(),
+		}
+	}
+
+	if err := addSceneTransitions(s.director); err != nil {
+		return errs.BootFailure{
+			Message: "Failed to add scene transitions: " + err.Error(),
+		}
+	}
+
 	ebiten.SetWindowTitle(s.config.Name + " - " + s.config.Version + " (" + s.config.BuildMode + ")")
 	ebiten.SetWindowSize(s.config.WindowWidth, s.config.WindowHeight)
 	ebiten.SetFullscreen(s.config.Fullscreen)
 
+	s.director.TransitionTo(splashscreen.SplashScreenScene)
 	s.time.Start()
+
 	return ebiten.RunGame(s)
 }
 
@@ -88,4 +105,21 @@ func (s *Shell) Layout(outsideWidth, outsideHeight int) (int, int) {
 	width := int(float64(s.config.WindowWidth) * s.config.RenderScale)
 	height := int(float64(s.config.WindowHeight) * s.config.RenderScale)
 	return width, height
+}
+
+func registerScenes(d *scene.Director) error {
+	if err := d.RegisterScene(splashscreen.SplashScreenScene, splashscreen.NewScene); err != nil {
+		return err
+	}
+	if err := d.RegisterScene(gameplay.GameplayScene, gameplay.NewScene); err != nil {
+		return err
+	}
+	return nil
+}
+
+func addSceneTransitions(d *scene.Director) error {
+	if err := d.AddTransition(splashscreen.SplashScreenScene, splashscreen.SplashScreenComplete, gameplay.GameplayScene); err != nil {
+		return err
+	}
+	return nil
 }
