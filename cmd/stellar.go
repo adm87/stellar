@@ -14,7 +14,7 @@ func Stellar(version string) error {
 	args, err := parseArgs()
 
 	if err != nil {
-		return &errs.Fatal{
+		return errs.Fatal{
 			Message: fmt.Sprintf("Failed to parse arguments: %v", err),
 		}
 	}
@@ -22,7 +22,7 @@ func Stellar(version string) error {
 	cfg := game.NewConfig(version, args)
 
 	if err := game.NewShell(cfg).Run(); err != nil {
-		return &errs.Fatal{
+		return errs.Fatal{
 			Message: fmt.Sprintf("Failed to run game shell: %v", err),
 		}
 	}
@@ -44,7 +44,7 @@ func parseArgs() (game.Args, error) {
 func validateArgs(args *game.Args) error {
 	absRootPath, err := filepath.Abs(args.RootDir)
 	if err != nil {
-		return &errs.InvalidArg{
+		return errs.InvalidArg{
 			Message: fmt.Sprintf("Invalid root directory: %v", err),
 		}
 	}
@@ -52,7 +52,7 @@ func validateArgs(args *game.Args) error {
 
 	lvl := logging.LogLevel(args.LogLevel)
 	if !lvl.IsValid() {
-		return &errs.InvalidArg{
+		return errs.InvalidArg{
 			Message: fmt.Sprintf("Invalid log level: %s", args.LogLevel),
 		}
 	}
