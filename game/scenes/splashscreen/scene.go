@@ -27,7 +27,13 @@ type Scene struct {
 }
 
 func NewScene() scene.Scene {
-	return &Scene{}
+	return &Scene{
+		sequence: gween.NewSequence(
+			gween.New(0, 1, 1.0, ease.Linear),
+			gween.New(1, 1, 2.0, ease.Linear),
+			gween.New(1, 0, 1.0, ease.Linear),
+		),
+	}
 }
 
 func (s *Scene) EnterScene(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) error {
@@ -46,11 +52,6 @@ func (s *Scene) EnterScene(assets *assets.Assets, buffer *rendering.ScreenBuffer
 	buffer.Resize(img.Bounds().Dx(), img.Bounds().Dy())
 	buffer.SetFilter(ebiten.FilterLinear)
 
-	s.sequence = gween.NewSequence(
-		gween.New(0, 1, 1.0, ease.Linear),
-		gween.New(1, 1, 2.0, ease.Linear),
-		gween.New(1, 0, 1.0, ease.Linear),
-	)
 	s.img = img
 
 	return nil

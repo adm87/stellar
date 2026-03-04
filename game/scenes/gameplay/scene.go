@@ -10,6 +10,7 @@ import (
 	"github.com/adm87/stellar/timing"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/yohamta/donburi"
 )
 
 const (
@@ -18,10 +19,13 @@ const (
 )
 
 type Scene struct {
+	world donburi.World
 }
 
 func NewScene() scene.Scene {
-	return &Scene{}
+	return &Scene{
+		world: donburi.NewWorld(),
+	}
 }
 
 func (s *Scene) EnterScene(assets *assets.Assets, buffer *rendering.ScreenBuffer, logger *logging.Logger, time *timing.Time) error {
