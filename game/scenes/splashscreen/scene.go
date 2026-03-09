@@ -26,7 +26,7 @@ type Scene struct {
 	opacity float32
 }
 
-func NewScene() scene.Scene {
+func NewScene(_ *timing.Time) scene.Scene {
 	return &Scene{
 		sequence: gween.NewSequence(
 			gween.New(0, 1, 1.0, ease.Linear),

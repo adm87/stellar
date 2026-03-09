@@ -13,6 +13,7 @@ type Time struct {
 	accumulator time.Duration
 	lastUpdate  time.Time
 	fixedSteps  int
+	frame       uint64
 }
 
 func NewTime(fps int) *Time {
@@ -22,14 +23,18 @@ func NewTime(fps int) *Time {
 		accumulator: 0,
 		lastUpdate:  time.Now(),
 		fixedSteps:  0,
+		frame:       0,
 	}
 }
 
 func (t *Time) Start() {
 	t.lastUpdate = time.Now()
+	t.frame = 0
 }
 
 func (t *Time) Tick() {
+	t.frame++
+
 	now := time.Now()
 
 	t.delta = now.Sub(t.lastUpdate)
@@ -70,4 +75,8 @@ func (t *Time) FixedDelta() float64 {
 
 func (t *Time) FixedDelta32() float32 {
 	return float32(t.fixedDelta.Seconds())
+}
+
+func (t *Time) Frame() uint64 {
+	return t.frame
 }

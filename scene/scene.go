@@ -30,7 +30,7 @@ type Scene interface {
 }
 
 // SceneFactory is a function type that creates a new instance of a Scene.
-type SceneFactory func() Scene
+type SceneFactory func(time *timing.Time) Scene
 
 // SceneTransition represents the condition under which a scene should exit, used to determine when to transition to another scene.
 type SceneTransition uint8
@@ -165,7 +165,7 @@ func (d *Director) Update(assets *assets.Assets, buffer *rendering.ScreenBuffer,
 			}
 		}
 
-		d.current = nextCtor()
+		d.current = nextCtor(time)
 		d.currentID = d.nextID
 		d.nextID = InvalidSceneID
 
